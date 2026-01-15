@@ -1,0 +1,76 @@
+plugins {
+    id 'java-library'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'maven-publish'
+}
+
+group = 'com.logviewer'
+version = '1.0.0'
+
+java {
+    sourceCompatibility = '17'
+}
+
+repositories {
+    mavenCentral()
+}
+
+// Check if running in standalone/test mode
+def isStandalone = project.hasProperty('standalone') || gradle.startParameter.taskNames.contains('bootRun')
+
+dependencies {
+    if (isStandalone) {
+        // For standalone testing - include Spring Boot
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+    } else {
+        // For library mode - Spring Boot provided by consumer
+        compileOnly 'org.springframework.boot:spring-boot-starter-web'
+        compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
+    }
+
+    // Configuration properties metadata
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+}
+
+// Configure bootJar based on mode
+bootJar {
+    enabled = isStandalone
+    archiveClassifier = 'standalone'
+}
+
+// Standard jar always enabled for library distribution
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+// Publishing configuration for local/remote Maven repository
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'Log Viewer'
+                description = 'A modular log viewer library for Spring Boot applications'
+                url = 'https://github.com/example/log-viewer'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
